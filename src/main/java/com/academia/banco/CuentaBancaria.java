@@ -53,7 +53,9 @@ public class CuentaBancaria {
         }
         saldo = saldo.subtract(total);
         retiros++;
+
         movimientos.add(new Movimiento(TipoMovimiento.RETIRO, m));
+
         if (comision.signum() > 0) {
             movimientos.add(new Movimiento(TipoMovimiento.COMISION, comision));
         }
