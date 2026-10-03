@@ -28,6 +28,12 @@ public class CuentaBancaria {
     private int retiros = 0;
     private final List<Movimiento> movimientos = new ArrayList<>();
 
+    private void validarAbierta() {
+        if (cerrada) {
+            throw new CuentaCerradaException(titular);
+        }
+    }
+
     public CuentaBancaria(String titular) {
         if (titular == null || titular.isBlank()) {
             throw new IllegalArgumentException("El titular es obligatorio");
@@ -36,12 +42,16 @@ public class CuentaBancaria {
     }
 
     public void depositar(BigDecimal monto) {
+        validarAbierta();
+
         BigDecimal m = validarMonto(monto);
         saldo = saldo.add(m);
         movimientos.add(new Movimiento(TipoMovimiento.DEPOSITO, m));
     }
 
     public void retirar(BigDecimal monto) {
+        validarAbierta();
+
         BigDecimal m = validarMonto(monto);
         if (m.compareTo(LIMITE_POR_RETIRO) > 0) {
             throw new LimiteExcedidoException(m, LIMITE_POR_RETIRO);
@@ -62,6 +72,7 @@ public class CuentaBancaria {
     }
 
     public void transferir(BigDecimal monto, CuentaBancaria destino) {
+        
         if (destino == null) {
             throw new IllegalArgumentException("La cuenta destino es obligatoria");
         }
@@ -72,6 +83,9 @@ public class CuentaBancaria {
         if (m.compareTo(saldo) > 0) {
             throw new SaldoInsuficienteException(saldo, m);
         }
+
+        destino.validarAbierta();
+
         saldo = saldo.subtract(m);
         destino.saldo = destino.saldo.add(m);
         movimientos.add(new Movimiento(TipoMovimiento.TRANSFERENCIA_ENVIADA, m));
@@ -110,5 +124,25 @@ public class CuentaBancaria {
             throw new IllegalArgumentException("El monto no puede tener fracciones de centavo");
         }
         return monto.setScale(2);
+    }
+
+    private boolean cerrada = false;
+
+    public void cerrar() {
+        if (cerrada) {
+            throw new CuentaCerradaException(titular);
+        }
+
+        if (saldo.compareTo(BigDecimal.ZERO) != 0) {
+            throw new IllegalStateException(
+                "No puedes cerrar una cuenta con saldo: $" + saldo
+            );
+        }
+
+        cerrada = true;
+    }
+
+    public boolean estaCerrada() {
+        return cerrada;
     }
 }
